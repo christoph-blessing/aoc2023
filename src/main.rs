@@ -1,126 +1,77 @@
 use std::fs;
 
-fn parse_numbers(input: &str) -> Vec<u32> {
-    let lines: Vec<&str> = input.lines().collect();
-    let mut numbers: Vec<u32> = Vec::new();
-    for line in &lines {
-        let mut first_digit: Option<char> = None;
-        let mut last_digit: Option<char> = None;
-        for char in line.chars() {
-            if !char.is_numeric() {
-                continue;
-            }
-            if first_digit.is_none() {
-                first_digit = Some(char);
-            }
-            last_digit = Some(char);
-        }
-        let first_digit = first_digit.unwrap();
-        let last_digit = last_digit.unwrap();
-        let number: u32 = format!("{first_digit}{last_digit}").parse().unwrap();
-        numbers.push(number);
-        println!("{line}, {number}")
-    }
-    numbers
-}
+const PATTERNS: [&str; 18] = [
+    "1", "2", "3", "4", "5", "6", "7", "8", "9", "one", "two", "three", "four", "five", "six",
+    "seven", "eight", "nine",
+];
 
-fn sum_numbers(numbers: Vec<u32>) -> u32 {
+fn parse_numbers(text: &str) -> u32 {
+    fn parse_line(line: &str) -> u32 {
+        let mut patterns = Vec::new();
+        for pattern in PATTERNS {
+            let pattern = pattern.to_owned();
+            patterns.push(pattern)
+        }
+
+        let mut reversed_patterns = Vec::new();
+        for pattern in PATTERNS {
+            let reversed_pattern = pattern.chars().rev().collect::<String>();
+            reversed_patterns.push(reversed_pattern)
+        }
+
+        let first_digit = match find(line, patterns) {
+            Some((_, pattern)) => pattern,
+            None => panic!(),
+        };
+        let reversed_line = line.chars().rev().collect::<String>();
+        let last_digit = match find(&reversed_line, reversed_patterns) {
+            Some((_, pattern)) => pattern.chars().rev().collect::<String>(),
+            None => panic!(),
+        };
+        format!(
+            "{}{}",
+            convert_digit(&first_digit),
+            convert_digit(&last_digit)
+        )
+        .parse::<u32>()
+        .unwrap()
+    }
+    fn find(line: &str, patterns: Vec<String>) -> Option<(usize, String)> {
+        let mut first_match = None;
+        for pattern in patterns {
+            match line.find(&pattern) {
+                Some(current_index) => match first_match {
+                    Some((first_index, _)) => {
+                        if current_index < first_index {
+                            first_match = Some((current_index, pattern.to_owned()));
+                        }
+                    }
+                    None => first_match = Some((current_index, pattern.to_owned())),
+                },
+                None => (),
+            }
+        }
+        first_match
+    }
+    fn convert_digit(digit: &str) -> &str {
+        let mut index = PATTERNS.iter().position(|d| d.to_owned() == digit).unwrap();
+        if index > 8 {
+            index = index - 9;
+        }
+        match PATTERNS.get(index) {
+            Some(index) => index,
+            None => panic!(),
+        }
+    }
     let mut total = 0;
-    for number in numbers {
-        total = total + number;
+    for line in text.lines() {
+        total = total + parse_line(line);
     }
     total
 }
 
-const NUMBERS_STR: [&str; 9] = [
-    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-];
-const NUMBERS_INT: [&str; 9] = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-
-fn convert_numbers(input: &str) -> String {
-    let mut converted_lines: Vec<String> = Vec::new();
-    for line in input.lines() {
-        let mut converted_line = line.to_owned();
-
-        let mut min_match = None;
-        for (pattern_index, number_str) in NUMBERS_STR.iter().enumerate() {
-            for (match_index, _) in converted_line.match_indices(number_str) {
-                match min_match {
-                    Some((min_index, _)) => {
-                        if match_index < min_index {
-                            min_match = Some((match_index, pattern_index));
-                        }
-                    }
-                    None => min_match = Some((match_index, pattern_index)),
-                };
-            }
-        }
-        match min_match {
-            Some((min_index, pattern_index)) => {
-                let pattern = NUMBERS_STR[pattern_index];
-                converted_line.replace_range(
-                    min_index..min_index + pattern.len(),
-                    NUMBERS_INT[pattern_index],
-                )
-            }
-            None => (),
-        }
-
-        let mut max_match = None;
-        for (pattern_index, number_str) in NUMBERS_STR.iter().enumerate() {
-            for (match_index, _) in converted_line.match_indices(number_str) {
-                match max_match {
-                    Some((max_index, _)) => {
-                        if match_index > max_index {
-                            max_match = Some((match_index, pattern_index))
-                        }
-                    }
-                    None => max_match = Some((match_index, pattern_index)),
-                };
-            }
-        }
-        match max_match {
-            Some((max_index, pattern_index)) => {
-                let pattern = NUMBERS_STR[pattern_index];
-                converted_line.replace_range(
-                    max_index..max_index + pattern.len(),
-                    NUMBERS_INT[pattern_index],
-                )
-            }
-            None => (),
-        }
-        // println!("{line}, {converted_line}");
-        converted_lines.push(converted_line);
-    }
-    converted_lines.join("\n")
-}
-
-fn parse_numbers2(input: &str) {
-    for line in input.lines() {
-        let mut first_digit = None;
-        let mut last_digit = None;
-        let mut possible_matches = Vec::from(NUMBERS_STR);
-        let mut match_index = 0;
-        for char in line.chars() {
-            if char.is_numeric() {
-                if first_digit.is_none() {
-                    first_digit = Some(char)
-                }
-                last_digit = Some(char);
-                continue;
-            }
-            for possible_match in possible_matches {
-                if match_index > possible_match.len() {}
-            }
-        }
-    }
-}
-
 fn main() {
     let contents = fs::read_to_string("1_trebuchet.txt").expect("Could not read file!");
-    let total = sum_numbers(parse_numbers(&contents));
-    println!("{total}");
-    let converted = convert_numbers(&contents);
-    let converted_total = sum_numbers(parse_numbers(&converted));
-    println!("{converted_total}")
+    let total = parse_numbers(&contents);
+    println!("{total}")
 }
