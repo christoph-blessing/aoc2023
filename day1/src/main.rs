@@ -71,7 +71,7 @@ fn parse_numbers(text: &str) -> u32 {
 }
 
 fn main() {
-    let contents = fs::read_to_string("1_trebuchet.txt").expect("Could not read file!");
+    let contents = fs::read_to_string("input.txt").expect("Could not read file!");
     let total = parse_numbers(&contents);
     println!("{total}")
 }
