@@ -50,14 +50,14 @@ fn main() {
         i_row += 1;
     }
 
-    let mut part_numbers = Vec::new();
+    let mut neighborhoods = Vec::new();
     for (number, i_row, i_start, i_end) in numbers {
-        let mut positions = Vec::new();
+        let mut neighborhood = Vec::new();
         if i_start > 0 {
-            positions.push((i_row, i_start - 1));
+            neighborhood.push((i_row, i_start - 1));
         }
         if i_end < 139 {
-            positions.push((i_row, i_end + 1));
+            neighborhood.push((i_row, i_end + 1));
         }
         let i_search_start = match i_start > 0 {
             true => i_start - 1,
@@ -69,24 +69,67 @@ fn main() {
         };
         if i_row > 0 {
             for i_col in i_search_start..i_search_end + 1 {
-                positions.push((i_row - 1, i_col))
+                neighborhood.push((i_row - 1, i_col))
             }
         }
         if i_row < 139 {
             for i_col in i_search_start..i_search_end + 1 {
-                positions.push((i_row + 1, i_col))
+                neighborhood.push((i_row + 1, i_col))
             }
         }
-        for (i_row, i_col) in positions {
-            if is_symbol(grid[i_row][i_col]) {
+        neighborhoods.push((number, neighborhood));
+    }
+
+    let mut part_numbers = Vec::new();
+    for (number, neighborhood) in &neighborhoods {
+        for (i_row, i_col) in neighborhood {
+            if is_symbol(grid[*i_row][*i_col]) {
                 part_numbers.push(number)
             }
         }
     }
 
-    let mut total = 0;
+    let mut total_parts = 0;
     for part_number in part_numbers {
-        total = total + part_number
+        total_parts = total_parts + part_number
     }
-    println!("{total}")
+
+    let mut stars = Vec::new();
+    for (i_row, row) in grid.iter().enumerate() {
+        for (i_col, element) in row.iter().enumerate() {
+            if element != &'*' {
+                continue;
+            }
+            stars.push((i_row, i_col))
+        }
+    }
+
+    let mut ratios = Vec::new();
+    for (i_row_star, i_col_star) in stars {
+        let mut factors = Vec::new();
+        for (number, neighborhood) in &neighborhoods {
+            for (i_row_neighbor, i_col_neighbor) in neighborhood {
+                if i_row_star != *i_row_neighbor || i_col_star != *i_col_neighbor {
+                    continue;
+                }
+                factors.push(number);
+                if factors.len() == 2 {
+                    break;
+                }
+            }
+        }
+        if factors.len() < 2 {
+            continue;
+        }
+        let ratio = factors[0] * factors[1];
+        ratios.push(ratio);
+    }
+
+    let mut total_ratios = 0;
+    for ratio in ratios {
+        total_ratios = total_ratios + ratio;
+    }
+
+    println!("Total part numbers: {total_parts}");
+    println!("Total gear ratios: {total_ratios}");
 }
