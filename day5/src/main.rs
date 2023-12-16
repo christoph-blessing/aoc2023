@@ -3,8 +3,10 @@ fn main() {
     let input = fs::read_to_string("input.txt").unwrap();
     let seeds = parse_seeds(&input);
     let maps = parse_maps(&input);
-    let lowest_location = part_1(&seeds, &maps);
-    println!("Lowest location number: {lowest_location}")
+    let answer_1 = part_1(&seeds, &maps);
+    let answer_2 = part_2(&seeds, &maps);
+    println!("Part 1 answer: {answer_1}");
+    println!("Part 2 answer: {answer_2}")
 }
 
 #[derive(Debug)]
@@ -78,7 +80,10 @@ fn parse_maps(input: &str) -> Vec<Map> {
     maps
 }
 
-fn part_1(seeds: &Vec<usize>, maps: &Vec<Map>) -> usize {
+fn find_location<I>(seeds: I, maps: &Vec<Map>) -> usize
+where
+    I: Iterator<Item = usize>,
+{
     let mut lowest_location = None;
     for current_seed in seeds {
         let mut number = current_seed.clone();
@@ -95,4 +100,23 @@ fn part_1(seeds: &Vec<usize>, maps: &Vec<Map>) -> usize {
         }
     }
     lowest_location.unwrap()
+}
+
+fn part_1(seeds: &Vec<usize>, maps: &Vec<Map>) -> usize {
+    find_location(seeds.to_owned().into_iter(), maps)
+}
+
+fn part_2(raw_seed_ranges: &Vec<usize>, maps: &Vec<Map>) -> usize {
+    let mut seed_ranges = Vec::new();
+    let mut seed_iter = raw_seed_ranges.iter();
+    loop {
+        let start = match seed_iter.next() {
+            Some(start) => start,
+            None => break,
+        };
+        let length = seed_iter.next().unwrap();
+        seed_ranges.push(*start..*start + length);
+    }
+    let seeds = seed_ranges.iter().flat_map(|it| it.clone());
+    find_location(seeds, maps)
 }
