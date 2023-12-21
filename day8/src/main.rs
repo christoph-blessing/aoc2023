@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 
 #[derive(Debug)]
@@ -47,35 +46,52 @@ fn part1(nodes: &Vec<Node>, instructions: &Vec<char>) -> usize {
 }
 
 fn part2(nodes: &Vec<Node>, instructions: &Vec<char>) -> usize {
-    let left: HashMap<&str, &str> = HashMap::from_iter(nodes.iter().map(|n| (n.label, n.left)));
-    let right: HashMap<&str, &str> = HashMap::from_iter(nodes.iter().map(|n| (n.label, n.right)));
-    let mut current: Vec<&str> = nodes
+    let starts: Vec<&Node> = nodes
         .iter()
         .filter(|n| n.label.chars().last().unwrap() == 'A')
-        .map(|n| n.label)
         .collect();
-    let mut n_steps = 0;
-    let mut instructions_iter = instructions.iter().cycle();
-    while current.iter().any(|l| l.chars().last().unwrap() != 'Z') {
-        println!("{:?}", n_steps);
-        let instruction = instructions_iter.next().unwrap();
-        current = current
-            .iter()
-            .map(|old| {
-                let new;
-                if instruction == &'L' {
-                    new = *left.get(old).unwrap()
-                } else {
-                    new = *right.get(old).unwrap()
-                }
-                new
-            })
-            .collect();
-        n_steps = n_steps + 1;
-    }
-    n_steps
+    let factors = starts
+        .into_iter()
+        .map(|start| {
+            let mut current = start;
+            instructions
+                .iter()
+                .cycle()
+                .enumerate()
+                .map(move |(index, instruction)| {
+                    let label = if instruction == &'L' {
+                        current.left
+                    } else {
+                        current.right
+                    };
+                    current = find_node(nodes, label);
+                    (index, current)
+                })
+                .find(|(_, node)| node.label.chars().last() == Some('Z'))
+                .map(|(index, _)| index + 1)
+        })
+        .flatten();
+    factors
+        .reduce(|acc, f| least_common_multiple(acc, f))
+        .unwrap()
 }
 
 fn find_node<'a>(nodes: &'a Vec<Node>, label: &str) -> &'a Node<'a> {
     nodes.iter().find(|n| n.label == label).unwrap()
+}
+
+fn least_common_multiple(number1: usize, number2: usize) -> usize {
+    if number1 == 0 || number2 == 0 {
+        return 0;
+    }
+    (number1 * number2) / greatest_common_divisor(number1, number2)
+}
+
+fn greatest_common_divisor(mut number1: usize, mut number2: usize) -> usize {
+    while number2 != 0 {
+        let temp = number2;
+        number2 = number1 % number2;
+        number1 = temp;
+    }
+    number1
 }
